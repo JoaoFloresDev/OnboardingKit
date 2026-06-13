@@ -1,6 +1,42 @@
 # OnboardingKit
 
-Shared GambitStudio onboarding scaffold. Single-screen hero pattern — proven converting layout (self-contained GambitStudio standard).
+Shared GambitStudio onboarding — self-contained standard.
+
+**Padrão atual = multi-step + paywall (`OnboardingFeaturePager`).** O host orquestra o fluxo:
+`OnboardingFeaturePager` (2-3 features paginadas, gradiente colorido por step, dots, Continue)
+→ step de dados opcional (peso/altura, etc.) → step de permissão opcional (HealthKit, notificações)
+→ `PaywallScaffold` (PaywallKit) → marcar `hasSeenOnboarding = true`.
+
+`onContinue` do pager dispara ao terminar/pular as features; o host avança os demais estágios.
+
+```swift
+import OnboardingKit
+
+OnboardingFeaturePager(
+    steps: [
+        .init(id: 0, icon: "figure.walk.circle.fill",
+              gradientTop: Color(red: 0.23, green: 0.51, blue: 0.96),
+              gradientBottom: Color(red: 0.12, green: 0.11, blue: 0.29),
+              title: String(localized: "onboarding.step1.title"),
+              subtitle: String(localized: "onboarding.step1.subtitle")),
+        .init(id: 1, icon: "chart.bar.xaxis",
+              gradientTop: Color(red: 0.06, green: 0.72, blue: 0.51),
+              gradientBottom: Color(red: 0.02, green: 0.31, blue: 0.23),
+              title: String(localized: "onboarding.step2.title"),
+              subtitle: String(localized: "onboarding.step2.subtitle"))
+    ],
+    nextText: String(localized: "action.next"),
+    continueText: String(localized: "onboarding.continue"),
+    skipText: String(localized: "onboarding.skip"),
+    onContinue: { stage = .personalInfo }
+)
+```
+
+> `OnboardingScaffold` (single-screen hero) continua disponível como legado/alternativa, mas o padrão GambitStudio é o multi-step acima.
+
+---
+
+## Legado: `OnboardingScaffold` (single-screen hero)
 
 ## Install
 
