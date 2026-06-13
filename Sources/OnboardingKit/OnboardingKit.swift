@@ -1,6 +1,6 @@
 //
 //  OnboardingKit
-//  Shared GambitStudio onboarding scaffold (AppLock single-screen hero pattern).
+//  Shared GambitStudio onboarding scaffold (single-screen hero pattern).
 //
 //  Usage in your app:
 //      import OnboardingKit

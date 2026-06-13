@@ -1,6 +1,6 @@
 # OnboardingKit
 
-Shared GambitStudio onboarding scaffold. Single-screen hero pattern derived from AppLock — proven converting layout.
+Shared GambitStudio onboarding scaffold. Single-screen hero pattern — proven converting layout (self-contained GambitStudio standard).
 
 ## Install
 
