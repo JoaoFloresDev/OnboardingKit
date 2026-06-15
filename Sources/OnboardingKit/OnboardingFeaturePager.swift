@@ -38,14 +38,18 @@ import SwiftUI
 public struct OnboardingFeatureStep: Identifiable, Sendable {
     public let id: Int
     public let icon: String
+    /// Optional asset-catalog image name (from the host app's main bundle).
+    /// When set, the pager shows this illustration instead of the SF Symbol bubble.
+    public let heroImage: String?
     public let gradientTop: Color
     public let gradientBottom: Color
     public let title: String
     public let subtitle: String
 
-    public init(id: Int, icon: String, gradientTop: Color, gradientBottom: Color, title: String, subtitle: String) {
+    public init(id: Int, icon: String, gradientTop: Color, gradientBottom: Color, title: String, subtitle: String, heroImage: String? = nil) {
         self.id = id
         self.icon = icon
+        self.heroImage = heroImage
         self.gradientTop = gradientTop
         self.gradientBottom = gradientBottom
         self.title = title
@@ -141,13 +145,22 @@ public struct OnboardingFeaturePager: View {
         VStack(spacing: 28) {
             Spacer()
             ZStack {
-                Circle().fill(.ultraThinMaterial).frame(width: 156, height: 156)
-                    .overlay(Circle().strokeBorder(Color.white.opacity(0.25), lineWidth: 1))
-                Image(systemName: item.icon)
-                    .font(.system(size: 80))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                    .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
+                if let heroImage = item.heroImage {
+                    Image(heroImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 250, height: 250)
+                        .shadow(color: .black.opacity(0.18), radius: 14, y: 8)
+                        .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
+                } else {
+                    Circle().fill(.ultraThinMaterial).frame(width: 156, height: 156)
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.25), lineWidth: 1))
+                    Image(systemName: item.icon)
+                        .font(.system(size: 80))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                        .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
+                }
             }
             VStack(spacing: 14) {
                 Text(item.title)
