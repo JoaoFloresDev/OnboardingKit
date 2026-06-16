@@ -119,3 +119,54 @@ Add these to your app's `Localizable.xcstrings` in PT-BR, EN-US, ES-ES (and any 
 | `buttonText` | `String` | Texto do botão "Continue" |
 | `buttonTextColor` | `Color` | Cor do texto do botão (botão tem bg branco; use a primary color do app) |
 | `onContinue` | `() -> Void` | Callback quando user toca em Continue (use pra `hasSeenOnboarding = true`) |
+
+---
+
+## Alternativa cinematográfica: `CinematicOnboardingScaffold`
+
+Onboarding bold/animado de N steps com frame hero (header/footer), progress dots por step, transições fade+scale e carrossel de depoimentos. Asset-free por padrão (SF Symbols + gradientes da paleta), aceita imagens hero opcionais.
+
+Adaptado de [CinematicOnboardingView-SwiftUI](https://github.com/adamlyttleapps/CinematicOnboardingView-SwiftUI) (Adam Lyttle, MIT) — generalizado pra N steps, API pública e zero assets obrigatórios.
+
+```swift
+import OnboardingKit
+
+CinematicOnboardingScaffold(
+    isPresented: $showOnboarding,
+    accentColor: AppColors.primary,
+    continueText: String(localized: "onboarding.continue"),
+    steps: [
+        CinematicOnboardingStep(
+            title: String(localized: "onboarding.step1.title"),
+            subtitle: String(localized: "onboarding.step1.subtitle"),
+            progressSymbol: "sparkles",
+            proofSymbol: "magnifyingglass",
+            proofText: String(localized: "onboarding.step1.proof"),
+            media: {
+                CinematicTestimonialCarousel(
+                    testimonials: [
+                        .init(id: 1, title: "Such a good app"),
+                        .init(id: 2, title: "Love it", description: "Saves me time every day")
+                    ],
+                    accentColor: AppColors.primary
+                )
+            }
+        ),
+        CinematicOnboardingStep(
+            title: String(localized: "onboarding.step2.title"),
+            subtitle: String(localized: "onboarding.step2.subtitle"),
+            progressSymbol: "wand.and.stars",
+            proofSymbol: "photo.fill",
+            proofText: String(localized: "onboarding.step2.proof"),
+            media: { CinematicSymbolHero(symbol: "wand.and.stars", accentColor: AppColors.primary) }
+        )
+    ],
+    onFinish: { hasSeenOnboarding = true }
+)
+```
+
+Componentes públicos auxiliares (usar como `media` de um step):
+- `CinematicTestimonialCarousel(testimonials:accentColor:)` — depoimentos rotativos animados (laurel + estrelas, sem assets).
+- `CinematicSymbolHero(symbol:accentColor:)` — SF Symbol com glow pulsante + anel de sparkles girando.
+
+Parâmetros opcionais do scaffold: `headerImageName` / `footerImageName` (PNGs hero no Assets do app; se nil usa gradiente da `accentColor`), `preferredScheme` (default `.dark`).
