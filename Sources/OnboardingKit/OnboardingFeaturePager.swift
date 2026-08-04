@@ -146,10 +146,13 @@ public struct OnboardingFeaturePager: View {
             Spacer()
             ZStack {
                 if let heroImage = item.heroImage {
+                    // maxWidth/maxHeight (not fixed) so the hero yields vertical space on
+                    // short canvases (iPad compatibility mode, small iPhones) instead of
+                    // squeezing the title/subtitle into truncation.
                     Image(heroImage)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 250, height: 250)
+                        .frame(maxWidth: 250, maxHeight: 250)
                         .shadow(color: .black.opacity(0.18), radius: 14, y: 8)
                         .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
                 } else {
@@ -163,15 +166,19 @@ public struct OnboardingFeaturePager: View {
                 }
             }
             VStack(spacing: 14) {
+                // fixedSize(vertical) keeps the copy fully visible under vertical
+                // compression — the hero shrinks instead of the text truncating.
                 Text(item.title)
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
                 Text(item.subtitle)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 36)
             }
             Spacer(); Spacer()
