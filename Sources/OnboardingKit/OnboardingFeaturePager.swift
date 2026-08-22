@@ -65,6 +65,7 @@ public struct OnboardingFeaturePager: View {
     private let nextText: String
     private let continueText: String
     private let skipText: String?
+    private let onStepShown: ((Int) -> Void)?
     private let onContinue: () -> Void
 
     // MARK: - State
@@ -77,12 +78,14 @@ public struct OnboardingFeaturePager: View {
         nextText: String,
         continueText: String,
         skipText: String? = nil,
+        onStepShown: ((Int) -> Void)? = nil,
         onContinue: @escaping () -> Void
     ) {
         self.steps = steps
         self.nextText = nextText
         self.continueText = continueText
         self.skipText = skipText
+        self.onStepShown = onStepShown
         self.onContinue = onContinue
     }
 
@@ -120,6 +123,8 @@ public struct OnboardingFeaturePager: View {
         }
         .ignoresSafeArea()
         .animation(.easeInOut(duration: 0.5), value: step)
+        .onAppear { onStepShown?(step + 1) }
+        .onChange(of: step) { _, new in onStepShown?(new + 1) }
     }
 
     @ViewBuilder

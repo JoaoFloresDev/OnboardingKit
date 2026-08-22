@@ -86,6 +86,7 @@ public struct CinematicOnboardingScaffold: View {
     private let footerImageName: String?
     private let continueText: String
     private let preferredScheme: ColorScheme?
+    private let onStepShown: ((Int) -> Void)?
     private let onFinish: () -> Void
 
     // MARK: - Animation State
@@ -102,6 +103,7 @@ public struct CinematicOnboardingScaffold: View {
         headerImageName: String? = nil,
         footerImageName: String? = nil,
         preferredScheme: ColorScheme? = .dark,
+        onStepShown: ((Int) -> Void)? = nil,
         onFinish: @escaping () -> Void
     ) {
         self._isPresented = isPresented
@@ -111,6 +113,7 @@ public struct CinematicOnboardingScaffold: View {
         self.headerImageName = headerImageName
         self.footerImageName = footerImageName
         self.preferredScheme = preferredScheme
+        self.onStepShown = onStepShown
         self.onFinish = onFinish
     }
 
@@ -135,6 +138,7 @@ public struct CinematicOnboardingScaffold: View {
             }
         }
         .preferredColorScheme(preferredScheme)
+        .onAppear { onStepShown?(step + 1) }
     }
 
     // MARK: - Subviews
@@ -209,6 +213,7 @@ public struct CinematicOnboardingScaffold: View {
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 step += 1
+                onStepShown?(step + 1)
                 withAnimation(.easeInOut(duration: 0.5)) {
                     contentOpacity = 1
                 }
