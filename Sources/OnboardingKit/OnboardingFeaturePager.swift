@@ -213,7 +213,7 @@ public struct OnboardingFeaturePager: View {
                 .foregroundStyle(current.gradientBottom)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 18)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
+                .background(RoundedRectangle(cornerRadius: 16).fill(OnboardingCTAFill.gradient(.white)))
                 .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
         }
         .padding(.horizontal, 24)

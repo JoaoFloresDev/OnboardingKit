@@ -179,7 +179,7 @@ public struct OnboardingScaffold: View {
                 .foregroundStyle(buttonTextColor)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(Color.white)
+                .background(OnboardingCTAFill.gradient(.white))
                 .cornerRadius(16)
         }
         .scaleEffect(isButtonPressed ? 0.95 : 1.0)
