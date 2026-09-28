@@ -12,6 +12,10 @@
 //  user finishes (or skips) the feature tour; the host then advances through the remaining
 //  stages and the paywall.
 //
+//  Personalization: a step built with `OnboardingFeatureStep(id:question:gradientTop:gradientBottom:)`
+//  renders a single-choice question page (see OnboardingQuestionStep.swift); create the pager
+//  with the `answers:` overload so the host owns the answers.
+//
 //  Usage:
 //      OnboardingFeaturePager(
 //          steps: [
@@ -45,6 +49,9 @@ public struct OnboardingFeatureStep: Identifiable, Sendable {
     public let gradientBottom: Color
     public let title: String
     public let subtitle: String
+    /// When set, the page is a personalization question instead of a feature highlight.
+    /// Its answer lives in the pager's `answers` binding, keyed by `question.id`.
+    public let question: OnboardingQuestion?
 
     public init(id: Int, icon: String, gradientTop: Color, gradientBottom: Color, title: String, subtitle: String, heroImage: String? = nil) {
         self.id = id
@@ -54,6 +61,19 @@ public struct OnboardingFeatureStep: Identifiable, Sendable {
         self.gradientBottom = gradientBottom
         self.title = title
         self.subtitle = subtitle
+        self.question = nil
+    }
+
+    /// A question page. Requires the pager to be created with an `answers:` binding.
+    public init(id: Int, question: OnboardingQuestion, gradientTop: Color, gradientBottom: Color) {
+        self.id = id
+        self.icon = ""
+        self.heroImage = nil
+        self.gradientTop = gradientTop
+        self.gradientBottom = gradientBottom
+        self.title = question.title
+        self.subtitle = question.subtitle ?? ""
+        self.question = question
     }
 }
 
@@ -65,12 +85,18 @@ public struct OnboardingFeaturePager: View {
     private let nextText: String
     private let continueText: String
     private let skipText: String?
+    private let questionSkipText: String?
     private let onStepShown: ((Int) -> Void)?
+    private let onQuestionAnswered: ((OnboardingQuestion, OnboardingQuestionOption) -> Void)?
     private let onContinue: () -> Void
 
     // MARK: - State
     @State private var step = 0
     @State private var iconBounce = false
+    /// Answers of question pages, keyed by `OnboardingQuestion.id` (host-owned).
+    @Binding private var answers: [String: String]
+    @State private var skippedQuestionIDs: Set<String> = []
+    @State private var isRevertingStep = false
 
     // MARK: - Init
     public init(
@@ -85,12 +111,52 @@ public struct OnboardingFeaturePager: View {
         self.nextText = nextText
         self.continueText = continueText
         self.skipText = skipText
+        self.questionSkipText = nil
         self.onStepShown = onStepShown
+        self.onQuestionAnswered = nil
         self.onContinue = onContinue
+        self._answers = .constant([:])
+    }
+
+    /// Pager with personalization question pages (`OnboardingFeatureStep(id:question:...)`).
+    /// `answers` is keyed by `OnboardingQuestion.id` and holds the chosen `OnboardingQuestionOption.id`;
+    /// the Continue button stays disabled on a question page until it has an answer, and a
+    /// forward swipe past an unanswered question snaps back. `questionSkipText` (hidden by
+    /// default) adds a per-question skip below the options.
+    public init(
+        steps: [OnboardingFeatureStep],
+        answers: Binding<[String: String]>,
+        nextText: String,
+        continueText: String,
+        skipText: String? = nil,
+        questionSkipText: String? = nil,
+        onStepShown: ((Int) -> Void)? = nil,
+        onQuestionAnswered: ((OnboardingQuestion, OnboardingQuestionOption) -> Void)? = nil,
+        onContinue: @escaping () -> Void
+    ) {
+        self.steps = steps
+        self.nextText = nextText
+        self.continueText = continueText
+        self.skipText = skipText
+        self.questionSkipText = questionSkipText
+        self.onStepShown = onStepShown
+        self.onQuestionAnswered = onQuestionAnswered
+        self.onContinue = onContinue
+        self._answers = answers
     }
 
     private var isLastStep: Bool { step == steps.count - 1 }
     private var current: OnboardingFeatureStep { steps[min(step, steps.count - 1)] }
+
+    /// A feature page can always advance; a question page only once answered.
+    private var canAdvance: Bool {
+        guard let question = current.question else { return true }
+        return answers[question.id] != nil
+    }
+
+    private func isResolved(_ question: OnboardingQuestion) -> Bool {
+        answers[question.id] != nil || skippedQuestionIDs.contains(question.id)
+    }
 
     // MARK: - View Body
     public var body: some View {
@@ -124,7 +190,7 @@ public struct OnboardingFeaturePager: View {
         .ignoresSafeArea()
         .animation(.easeInOut(duration: 0.5), value: step)
         .onAppear { onStepShown?(step + 1) }
-        .onChange(of: step) { _, new in onStepShown?(new + 1) }
+        .onChange(of: step) { old, new in handleStepChange(from: old, to: new) }
     }
 
     @ViewBuilder
@@ -146,7 +212,36 @@ public struct OnboardingFeaturePager: View {
         }
     }
 
+    @ViewBuilder
     private func page(_ item: OnboardingFeatureStep) -> some View {
+        if let question = item.question {
+            questionPage(question)
+        } else {
+            featurePage(item)
+        }
+    }
+
+    private func questionPage(_ question: OnboardingQuestion) -> some View {
+        OnboardingQuestionContent(
+            question: question,
+            selection: answerBinding(for: question),
+            style: .onGradient,
+            skipText: questionSkipText,
+            onSelect: { onQuestionAnswered?(question, $0) },
+            onSkip: questionSkipText == nil ? nil : { skipQuestion(question) }
+        )
+    }
+
+    private func answerBinding(for question: OnboardingQuestion) -> Binding<String?> {
+        Binding(
+            get: { answers[question.id] },
+            set: { new in
+                if let new { answers[question.id] = new } else { answers.removeValue(forKey: question.id) }
+            }
+        )
+    }
+
+    private func featurePage(_ item: OnboardingFeatureStep) -> some View {
         VStack(spacing: 28) {
             Spacer()
             ZStack {
@@ -216,6 +311,9 @@ public struct OnboardingFeaturePager: View {
                 .background(RoundedRectangle(cornerRadius: 16).fill(OnboardingCTAFill.gradient(.white)))
                 .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
         }
+        .disabled(!canAdvance)
+        .opacity(canAdvance ? 1 : 0.55)
+        .animation(.easeInOut(duration: 0.2), value: canAdvance)
         .padding(.horizontal, 24)
         .padding(.bottom, 40)
     }
@@ -228,5 +326,25 @@ public struct OnboardingFeaturePager: View {
             iconBounce = false
             withAnimation(.easeInOut) { step += 1 }
         }
+    }
+
+    private func skipQuestion(_ question: OnboardingQuestion) {
+        skippedQuestionIDs.insert(question.id)
+        advance()
+    }
+
+    /// Logs the step view, except when the change is a forward swipe past an
+    /// unanswered question — that one is reverted (and the revert itself is not logged).
+    private func handleStepChange(from old: Int, to new: Int) {
+        if isRevertingStep {
+            isRevertingStep = false
+            return
+        }
+        if new > old, let question = steps[safe: old]?.question, !isResolved(question) {
+            isRevertingStep = true
+            withAnimation(.easeInOut) { step = old }
+            return
+        }
+        onStepShown?(new + 1)
     }
 }

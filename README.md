@@ -36,6 +36,63 @@ OnboardingFeaturePager(
 
 ---
 
+## Personalização: `OnboardingQuestionStep`
+
+Pergunta de escolha única (2-5 opções, SF Symbol opcional) entre as features e o step de permissão. Pesquisa 2026-09 (achado 3, Adapty): 2-3 perguntas de personalização = +8,5% trial / +17% pagantes. O kit renderiza; o app é dono da resposta (binding, normalmente `@AppStorage`) e de TODAS as strings. O CTA só habilita depois de escolher; "pular" existe mas fica oculto por padrão (`skipText: nil`).
+
+Tipos públicos: `OnboardingQuestion(id:title:subtitle:options:)`, `OnboardingQuestionOption(id:title:subtitle:symbol:)`, `OnboardingQuestionOptionList` (só as linhas, pra layouts próprios), `OnboardingQuestionOptionStyle` (`.onGradient` / `.accent(_:)`). Os `id` são chaves estáveis (`"goal"`, `"lose"`) — nunca o texto localizado. Accessibility ids: `onboarding.question.option.<id>`, `onboarding.question.continue`, `onboarding.question.skip`.
+
+**1. Como stage avulso** (host orquestra, igual ao pager):
+
+```swift
+@AppStorage("onboarding.goal") private var goal: String?
+
+OnboardingQuestionStep(
+    question: OnboardingQuestion(
+        id: "goal",
+        title: String(localized: "onboarding.goal.title"),
+        subtitle: String(localized: "onboarding.goal.subtitle"),
+        options: [
+            .init(id: "lose", title: String(localized: "onboarding.goal.lose"), symbol: "flame.fill"),
+            .init(id: "keep", title: String(localized: "onboarding.goal.keep"), symbol: "heart.fill"),
+            .init(id: "gain", title: String(localized: "onboarding.goal.gain"), symbol: "figure.run")
+        ]
+    ),
+    selection: $goal,
+    gradientTop: Color(red: 0.23, green: 0.51, blue: 0.96),
+    gradientBottom: Color(red: 0.12, green: 0.11, blue: 0.29),
+    continueText: String(localized: "onboarding.continue"),
+    onSelect: { Analytics.log("onboarding_question_answered", ["question": "goal", "answer": $0.id]) },
+    onContinue: { _ in stage = .permission }
+)
+```
+
+**2. Como página do `OnboardingFeaturePager`** — step criado com `OnboardingFeatureStep(id:question:gradientTop:gradientBottom:)` e o pager com o overload `answers:` (dicionário `question.id → option.id`). Swipe pra frente numa pergunta sem resposta volta pra ela; `questionSkipText` (opcional) adiciona um "pular" por pergunta:
+
+```swift
+@State private var answers: [String: String] = [:]   // persistir no onContinue (ex.: @AppStorage por pergunta)
+
+OnboardingFeaturePager(
+    steps: [
+        .init(id: 0, icon: "figure.walk.circle.fill", gradientTop: ..., gradientBottom: ..., title: ..., subtitle: ...),
+        .init(id: 1, question: goalQuestion, gradientTop: ..., gradientBottom: ...),
+        .init(id: 2, question: frequencyQuestion, gradientTop: ..., gradientBottom: ...)
+    ],
+    answers: $answers,
+    nextText: String(localized: "action.next"),
+    continueText: String(localized: "onboarding.continue"),
+    onStepShown: { Analytics.log("onboarding_step_viewed", ["step": $0]) },
+    onQuestionAnswered: { q, opt in Analytics.log("onboarding_question_answered", ["question": q.id, "answer": opt.id]) },
+    onContinue: { stage = .permission }
+)
+```
+
+**3. Como step do `CinematicOnboardingScaffold`** — `CinematicOnboardingStep(question:selection:progressSymbol:proofSymbol:proofText:accentColor:)`; o Continue do scaffold fica desabilitado até escolher.
+
+Analytics: `onboarding_question_answered` (params `question`, `answer`) é o nome proposto na pesquisa 2026-09 e **ainda não está na taxonomia canônica** (`analytics/event-taxonomy.md`) — logar pelo `onSelect`/`onQuestionAnswered` e registrar no report até a taxonomia adotar.
+
+---
+
 ## Legado: `OnboardingScaffold` (single-screen hero)
 
 ## Install

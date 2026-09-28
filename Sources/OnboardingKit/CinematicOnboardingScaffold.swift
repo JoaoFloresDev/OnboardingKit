@@ -40,6 +40,10 @@
 //          onFinish: { hasSeenOnboarding = true }
 //      )
 //
+//  Personalization: `CinematicOnboardingStep(question:selection:progressSymbol:proofSymbol:proofText:accentColor:)`
+//  renders a single-choice question as a step (see OnboardingQuestionStep.swift); Continue
+//  stays disabled until an option is chosen.
+//
 
 import SwiftUI
 
@@ -56,6 +60,8 @@ public struct CinematicOnboardingStep: Identifiable {
     public let proofSymbol: String
     public let proofText: String
     public let media: AnyView
+    /// Gate for the Continue button; `nil` means always enabled (feature steps).
+    let canContinue: (() -> Bool)?
 
     // MARK: - Init
     public init<Media: View>(
@@ -72,6 +78,36 @@ public struct CinematicOnboardingStep: Identifiable {
         self.proofSymbol = proofSymbol
         self.proofText = proofText
         self.media = AnyView(media())
+        self.canContinue = nil
+    }
+
+    /// A personalization question step: the option list is the media and the
+    /// scaffold's Continue button stays disabled until `selection` holds an option id.
+    @MainActor
+    public init(
+        question: OnboardingQuestion,
+        selection: Binding<String?>,
+        progressSymbol: String,
+        proofSymbol: String,
+        proofText: String,
+        accentColor: Color,
+        onSelect: ((OnboardingQuestionOption) -> Void)? = nil
+    ) {
+        self.title = question.title
+        self.subtitle = question.subtitle ?? ""
+        self.progressSymbol = progressSymbol
+        self.proofSymbol = proofSymbol
+        self.proofText = proofText
+        self.media = AnyView(
+            OnboardingQuestionOptionList(
+                question: question,
+                selection: selection,
+                style: .accent(accentColor),
+                onSelect: onSelect
+            )
+            .padding(.horizontal, 24)
+        )
+        self.canContinue = { question.option(withID: selection.wrappedValue) != nil }
     }
 }
 
@@ -169,7 +205,8 @@ public struct CinematicOnboardingScaffold: View {
     }
 
     private func actionArea(for current: CinematicOnboardingStep) -> some View {
-        VStack(spacing: 25) {
+        let canContinue = current.canContinue?() ?? true
+        return VStack(spacing: 25) {
             Button(action: nextStep) {
                 HStack {
                     Spacer()
@@ -184,6 +221,9 @@ public struct CinematicOnboardingScaffold: View {
                     .foregroundStyle(accentColor)
             }
             .tint(.white)
+            .disabled(!canContinue)
+            .opacity(canContinue ? 1 : 0.55)
+            .animation(.easeInOut(duration: 0.2), value: canContinue)
 
             HStack {
                 Image(systemName: current.proofSymbol)
