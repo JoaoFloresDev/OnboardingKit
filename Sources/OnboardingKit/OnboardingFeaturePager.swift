@@ -316,6 +316,9 @@ public struct OnboardingFeaturePager: View {
         .animation(.easeInOut(duration: 0.2), value: canAdvance)
         .padding(.horizontal, 24)
         .padding(.bottom, 40)
+        // Stable id so QA flows (Maestro) can drive the onboarding without tapping by point.
+        .accessibilityIdentifier(isLastStep ? "onboarding.continue" : "onboarding.next")
+        .accessibilityLabel(isLastStep ? continueText : nextText)
     }
 
     // MARK: - Actions
