@@ -227,3 +227,49 @@ Componentes públicos auxiliares (usar como `media` de um step):
 - `CinematicSymbolHero(symbol:accentColor:)` — SF Symbol com glow pulsante + anel de sparkles girando.
 
 Parâmetros opcionais do scaffold: `headerImageName` / `footerImageName` (PNGs hero no Assets do app; se nil usa gradiente da `accentColor`), `preferredScheme` (default `.dark`).
+
+## Kits r2 (28/09/2026) — barra de progresso, valor antes do paywall, compromisso
+
+Três views aditivas, asset-free, strings do app. O host continua orquestrando os estágios.
+
+### `OnboardingProgressBar`
+Barra fina no topo (N segmentos, `current` preenchidos). Overlay em todos os estágios — pager, perguntas, valor — com `current` sincronizado ao enum de estágio do host; conte o paywall no `total` se ele for o último estágio. Id `onboarding.progress` (accessibilityValue "3 of 6").
+
+```swift
+ZStack(alignment: .top) {
+    stageView
+    OnboardingProgressBar(current: stageIndex, total: 6)   // tint .white, track .white.opacity(0.28)
+}
+```
+
+### `OnboardingValueStep` — "é isso que você ganha", logo ANTES do paywall
+Título + 3 resultados com check + CTA padrão. Paywall antes do valor é a maior queda do funil (30-60%, pesquisa 2026-09, achado 11); os itens podem ecoar as respostas do usuário ("blocos de 25 min, 4 por ciclo"). Ids `onboarding.value`, `onboarding.value.item.<id>`, `onboarding.value.continue`.
+
+```swift
+OnboardingValueStep(
+    title: String(localized: "onboarding.value.title"),
+    subtitle: String(localized: "onboarding.value.subtitle"),
+    items: [
+        .init(symbol: "timer", title: String(localized: "onboarding.value.item1"), detail: ..., id: "blocks"),
+        .init(symbol: "chart.bar.fill", title: String(localized: "onboarding.value.item2"), id: "history"),
+        .init(symbol: "bell.badge.fill", title: String(localized: "onboarding.value.item3"), id: "reminders")
+    ],
+    gradientTop: AppColors.primary, gradientBottom: AppColors.primaryDeep,
+    continueText: String(localized: "action.continue"),
+    onContinue: { appState.completeOnboarding() }   // o host apresenta o paywall
+)
+```
+
+### `OnboardingCommitmentStep` (opcional) — "quero <objetivo>"
+Uma frase em primeira pessoa num card e UM botão ("Topo"); o check anima ~0,6 s antes de `onCommit`. `skipText`/`onSkip` opcionais. Ids `onboarding.commitment`, `.statement`, `.commit`, `.skip`.
+
+```swift
+OnboardingCommitmentStep(
+    title: String(localized: "onboarding.commitment.title"),
+    statement: String(localized: "onboarding.commitment.statement \(minutes)"),
+    gradientTop: AppColors.primary, gradientBottom: AppColors.primaryDeep,
+    commitText: String(localized: "onboarding.commitment.commit"),
+    skipText: String(localized: "onboarding.commitment.skip"),
+    onCommit: { stage = .value }, onSkip: { stage = .value }
+)
+```
