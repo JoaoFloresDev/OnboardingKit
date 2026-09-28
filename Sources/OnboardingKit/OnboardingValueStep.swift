@@ -101,7 +101,6 @@ public struct OnboardingValueStep: View {
                     .accessibilityIdentifier("onboarding.value.continue")
             }
         }
-        .accessibilityIdentifier("onboarding.value")
         .onAppear(perform: startEntranceAnimations)
     }
 
@@ -126,6 +125,8 @@ public struct OnboardingValueStep: View {
                     .foregroundStyle(.white)
             }
             .padding(.bottom, 8)
+            // The step id lives on the hero (a leaf): an id on the root container hides the CTA from XCTest/Maestro.
+            .accessibilityIdentifier("onboarding.value")
             Text(title)
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(.white)

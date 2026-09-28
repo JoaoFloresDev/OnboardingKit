@@ -90,7 +90,6 @@ public struct OnboardingCommitmentStep: View {
             .opacity(showContent ? 1 : 0)
             .offset(y: showContent ? 0 : 16)
         }
-        .accessibilityIdentifier("onboarding.commitment")
         .onAppear { withAnimation(.easeOut(duration: 0.5)) { showContent = true } }
     }
 
@@ -104,6 +103,8 @@ public struct OnboardingCommitmentStep: View {
                 .contentTransition(.symbolEffect(.replace))
         }
         .scaleEffect(isCommitted ? 1.08 : 1)
+        // Step id on the hero leaf, never on the root container (it would hide the buttons from XCTest/Maestro).
+        .accessibilityIdentifier("onboarding.commitment")
     }
 
     private var statementCard: some View {
