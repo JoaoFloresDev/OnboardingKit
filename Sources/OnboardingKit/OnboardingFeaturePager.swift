@@ -241,52 +241,70 @@ public struct OnboardingFeaturePager: View {
         )
     }
 
+    /// Vertical rhythm: the hero + copy block is centred in the page (equal slack above and
+    /// below), the dots sit a fixed 24pt above the CTA, and the hero scales with the page
+    /// height so tall phones get a bigger illustration instead of a bigger gap while the
+    /// SE / iPad compatibility canvas keeps the copy fully visible.
     private func featurePage(_ item: OnboardingFeatureStep) -> some View {
-        VStack(spacing: 28) {
-            Spacer()
-            ZStack {
-                if let heroImage = item.heroImage {
-                    // maxWidth/maxHeight (not fixed) so the hero yields vertical space on
-                    // short canvases (iPad compatibility mode, small iPhones) instead of
-                    // squeezing the title/subtitle into truncation.
-                    Image(heroImage)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 250, maxHeight: 250)
-                        .shadow(color: .black.opacity(0.18), radius: 14, y: 8)
-                        .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
-                } else {
-                    Circle().fill(.ultraThinMaterial).frame(width: 156, height: 156)
-                        .overlay(Circle().strokeBorder(Color.white.opacity(0.25), lineWidth: 1))
-                    Image(systemName: item.icon)
-                        .font(.system(size: 80))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                        .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
+        GeometryReader { geo in
+            let heroSize = heroSize(for: geo.size.height)
+            VStack(spacing: 28) {
+                Spacer(minLength: 16)
+                ZStack {
+                    if let heroImage = item.heroImage {
+                        // maxWidth/maxHeight (not fixed) so the hero yields vertical space on
+                        // short canvases (iPad compatibility mode, small iPhones) instead of
+                        // squeezing the title/subtitle into truncation.
+                        Image(heroImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: heroSize.image, maxHeight: heroSize.image)
+                            .shadow(color: .black.opacity(0.18), radius: 14, y: 8)
+                            .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
+                    } else {
+                        Circle().fill(.ultraThinMaterial).frame(width: heroSize.bubble, height: heroSize.bubble)
+                            .overlay(Circle().strokeBorder(Color.white.opacity(0.25), lineWidth: 1))
+                        Image(systemName: item.icon)
+                            .font(.system(size: heroSize.bubble * 0.51))
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                            .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
+                    }
                 }
+                VStack(spacing: 14) {
+                    // fixedSize(vertical) keeps the copy fully visible under vertical
+                    // compression — the hero shrinks instead of the text truncating.
+                    Text(item.title)
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
+                    Text(item.subtitle)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 36)
+                }
+                Spacer(minLength: 16)
             }
-            VStack(spacing: 14) {
-                // fixedSize(vertical) keeps the copy fully visible under vertical
-                // compression — the hero shrinks instead of the text truncating.
-                Text(item.title)
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
-                Text(item.subtitle)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 36)
-            }
-            Spacer(); Spacer()
+            .padding(.horizontal, 24)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
-        .padding(.horizontal, 24)
         .onAppear {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) { iconBounce = true }
         }
+    }
+
+    /// Hero dimensions from the page height: the symbol bubble takes ~30% of it (156-200pt,
+    /// the floor is the historical fixed size), a `heroImage` up to ~42% (200-300pt, was a
+    /// fixed 250pt cap). Small canvases therefore render as before; tall ones grow the hero.
+    private func heroSize(for pageHeight: CGFloat) -> (bubble: CGFloat, image: CGFloat) {
+        (
+            bubble: min(200, max(156, pageHeight * 0.30)),
+            image: min(300, max(200, pageHeight * 0.42))
+        )
     }
 
     private var pageDots: some View {
