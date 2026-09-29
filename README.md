@@ -2,6 +2,32 @@
 
 Shared GambitStudio onboarding — self-contained standard.
 
+## Padrão do lab: `GambitOnboardingPreset` (28/09/2026)
+
+App novo usa o preset: 2-3 steps de resultado → 2-3 perguntas → value step "seu X está pronto" (ecoa as respostas) → permissão opcional com UM botão (`OnboardingPermissionStep`) → `onFinish`, onde o host apresenta o `GambitPaywallPreset`. Barra de progresso ligada, dots escondidos. Evidência de cada decisão: `_GambitStudio/spec/paywall-onboarding-template.md`; copy em `_GambitStudio/templates/copy/onboarding.<locale>.json`.
+
+```swift
+@State private var answers: [String: String] = [:]
+
+GambitOnboardingPreset(
+    features: OnboardingCopy.steps,                    // 2-3 OnboardingFeatureStep
+    questions: [OnboardingCopy.goal, OnboardingCopy.frequency],
+    value: GambitOnboardingValue(title: String(localized: "onboarding.value.title"),
+                                 items: { answers in OnboardingCopy.valueItems(answers) }),
+    permission: nil,                                   // GambitOnboardingPermission(kind: "notifications", ...)
+    answers: $answers,
+    gradientTop: AppColors.primary, gradientBottom: AppColors.primaryDeep,
+    nextText: String(localized: "action.next"),
+    continueText: String(localized: "action.continue"),
+    onAnswer: { q, opt in apply(q.id, opt.id) },       // a resposta MUDA o app
+    onFinish: { appState.completeOnboarding() }       // e apresenta o paywall
+)
+```
+
+Analytics por `OnboardingAnalytics.onEvent = { Analytics.log($0, $1) }` (no `@main`): `onboarding_step_viewed(step, step_name)`, `onboarding_question_answered`, `permission_prompted` / `permission_result`, `onboarding_completed`. Ids: os dos componentes + `onboarding.permission`, `onboarding.permission.continue`.
+
+---
+
 **Padrão atual = multi-step + paywall (`OnboardingFeaturePager`).** O host orquestra o fluxo:
 `OnboardingFeaturePager` (2-3 features paginadas, gradiente colorido por step, dots, Continue) — com `OnboardingProgressBar` por cima, use `.pageDotsHidden()` (dois indicadores de progresso com contagens diferentes viram ruído)
 → step de dados opcional (peso/altura, etc.) → step de permissão opcional (HealthKit, notificações)
