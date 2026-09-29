@@ -89,6 +89,7 @@ public struct OnboardingFeaturePager: View {
     private let onStepShown: ((Int) -> Void)?
     private let onQuestionAnswered: ((OnboardingQuestion, OnboardingQuestionOption) -> Void)?
     private let onContinue: () -> Void
+    private var showsPageDots = true
 
     // MARK: - State
     @State private var step = 0
@@ -172,9 +173,21 @@ public struct OnboardingFeaturePager: View {
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.easeInOut, value: step)
                 pageDots
+                    .opacity(showsPageDots ? 1 : 0)
+                    .accessibilityHidden(!showsPageDots)
                 continueButton
             }
         }
+    }
+
+    // MARK: - Modifiers
+    /// Hides the page dots (layout unchanged) when the host already shows progress — e.g. an
+    /// `OnboardingProgressBar` over the whole flow: two progress indicators with different
+    /// counts (6 segments vs 2 dots) read as noise (kits r2 visual review, 28/09/2026).
+    public func pageDotsHidden(_ hidden: Bool = true) -> OnboardingFeaturePager {
+        var copy = self
+        copy.showsPageDots = !hidden
+        return copy
     }
 
     // MARK: - Subviews
