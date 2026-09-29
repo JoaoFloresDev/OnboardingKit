@@ -87,13 +87,15 @@ public struct OnboardingValueStep: View {
             background
             VStack(spacing: 0) {
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 28) {
+                    // 24pt above the CTA: at 16 the last card sat under the CTA's shadow on a 6.1"
+                    // phone (kits r2 visual review, 28/09/2026); the top band gives the 8pt back.
+                    VStack(spacing: 24) {
                         header
                         itemList
                     }
                     .padding(.horizontal, 24)
-                    .padding(.top, 48)
-                    .padding(.bottom, 16)
+                    .padding(.top, 36)
+                    .padding(.bottom, 24)
                 }
                 OnboardingPrimaryButton(text: continueText, textColor: gradientBottom, isEnabled: true, action: handleContinue)
                     .opacity(showButton ? 1 : 0)
