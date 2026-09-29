@@ -3,7 +3,7 @@
 Shared GambitStudio onboarding — self-contained standard.
 
 **Padrão atual = multi-step + paywall (`OnboardingFeaturePager`).** O host orquestra o fluxo:
-`OnboardingFeaturePager` (2-3 features paginadas, gradiente colorido por step, dots, Continue)
+`OnboardingFeaturePager` (2-3 features paginadas, gradiente colorido por step, dots, Continue) — com `OnboardingProgressBar` por cima, use `.pageDotsHidden()` (dois indicadores de progresso com contagens diferentes viram ruído)
 → step de dados opcional (peso/altura, etc.) → step de permissão opcional (HealthKit, notificações)
 → `PaywallScaffold` (PaywallKit) → marcar `hasSeenOnboarding = true`.
 
