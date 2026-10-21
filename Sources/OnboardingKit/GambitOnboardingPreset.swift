@@ -84,6 +84,11 @@ public struct GambitOnboardingPreset: View {
         case permission
     }
 
+    // MARK: - Transition
+    /// Horizontal push between stages, never a cross-fade (lab rule: onboarding → paywall → app moves sideways).
+    private static var stageTransition: AnyTransition { .push(from: .trailing) }
+    private static var stageAnimation: Animation { .easeInOut(duration: 0.3) }
+
     // MARK: - Configuration
     private let features: [OnboardingFeatureStep]
     private let questions: [OnboardingQuestion]
@@ -180,7 +185,7 @@ public struct GambitOnboardingPreset: View {
                 onContinue: { advance(from: .features) }
             )
             .pageDotsHidden()
-            .transition(.opacity)
+            .transition(Self.stageTransition)
         case .question(let index):
             if let question = questions[safe: index] {
                 OnboardingQuestionStep(
@@ -192,7 +197,7 @@ public struct GambitOnboardingPreset: View {
                     onContinue: { option in answer(question, option) }
                 )
                 .id(question.id)
-                .transition(.opacity)
+                .transition(Self.stageTransition)
                 .onAppear {
                     selection = answers[question.id]
                     logStep(features.count + index + 1, name: "question_\(question.id)")
@@ -208,7 +213,7 @@ public struct GambitOnboardingPreset: View {
                 continueText: continueText,
                 onContinue: { advance(from: .value) }
             )
-            .transition(.opacity)
+            .transition(Self.stageTransition)
             .onAppear { logStep(features.count + questions.count + 1, name: "preview") }
         case .permission:
             if let permission {
@@ -228,7 +233,7 @@ public struct GambitOnboardingPreset: View {
                         finish()
                     }
                 )
-                .transition(.opacity)
+                .transition(Self.stageTransition)
                 .onAppear {
                     logStep(features.count + questions.count + 2, name: "permission_\(permission.kind)")
                 }
@@ -246,7 +251,7 @@ public struct GambitOnboardingPreset: View {
         case .permission: next = nil
         }
         guard let next else { return finish() }
-        withAnimation(.easeInOut(duration: 0.3)) { stage = next }
+        withAnimation(Self.stageAnimation) { stage = next }
     }
 
     private func answer(_ question: OnboardingQuestion, _ option: OnboardingQuestionOption) {
