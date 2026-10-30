@@ -63,7 +63,6 @@ public struct OnboardingScaffold: View {
     @State private var visibleFeatures: Int = 0
     @State private var showButton = false
     @State private var iconPulse = false
-    @State private var isButtonPressed = false
 
     // MARK: - Init
     public init(
@@ -182,13 +181,7 @@ public struct OnboardingScaffold: View {
                 .background(OnboardingCTAFill.gradient(.white))
                 .cornerRadius(16)
         }
-        .scaleEffect(isButtonPressed ? 0.95 : 1.0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isButtonPressed)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isButtonPressed = true }
-                .onEnded { _ in isButtonPressed = false }
-        )
+        .buttonStyle(OnboardingPressStyle())
         .opacity(showButton ? 1 : 0)
         .offset(y: showButton ? 0 : 20)
         .padding(.horizontal, 30)
@@ -259,5 +252,17 @@ private struct OnboardingFeatureRow: View {
 
             Spacer()
         }
+    }
+}
+
+// MARK: - Press Style
+
+/// Press feedback from the button's own pressed state; a zero-distance DragGesture
+/// would swallow the touch and block scrolling when the drag starts on the button.
+private struct OnboardingPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
