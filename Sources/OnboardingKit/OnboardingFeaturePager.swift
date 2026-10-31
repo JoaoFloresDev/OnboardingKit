@@ -90,6 +90,8 @@ public struct OnboardingFeaturePager: View {
     private let onQuestionAnswered: ((OnboardingQuestion, OnboardingQuestionOption) -> Void)?
     private let onContinue: () -> Void
     private var showsPageDots = true
+    private var isGentleMotion = false
+    private var titleDesign: Font.Design?
 
     // MARK: - State
     @State private var step = 0
@@ -190,6 +192,22 @@ public struct OnboardingFeaturePager: View {
         return copy
     }
 
+    /// Calm hero entrance for health/wellness apps: a slow fade-like scale (97% to 100%, no
+    /// overshoot) instead of the default bouncy spring from 90%, and page dots that ease instead
+    /// of springing (João, 31/10/2026: "tem que ser leve e bonito").
+    public func gentleMotion(_ enabled: Bool = true) -> OnboardingFeaturePager {
+        var copy = self
+        copy.isGentleMotion = enabled
+        return copy
+    }
+
+    /// Font design of the feature page title only (e.g. `.serif`). nil keeps the system design.
+    public func titleFontDesign(_ design: Font.Design?) -> OnboardingFeaturePager {
+        var copy = self
+        copy.titleDesign = design
+        return copy
+    }
+
     // MARK: - Subviews
     private var background: some View {
         ZStack {
@@ -273,7 +291,7 @@ public struct OnboardingFeaturePager: View {
                             .scaledToFit()
                             .frame(maxWidth: heroSize.image, maxHeight: heroSize.image)
                             .shadow(color: .black.opacity(0.18), radius: 14, y: 8)
-                            .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
+                            .scaleEffect(iconBounce && item.id == step ? 1.0 : heroRestScale)
                     } else {
                         Circle().fill(.ultraThinMaterial).frame(width: heroSize.bubble, height: heroSize.bubble)
                             .overlay(Circle().strokeBorder(Color.white.opacity(0.25), lineWidth: 1))
@@ -281,14 +299,14 @@ public struct OnboardingFeaturePager: View {
                             .font(.system(size: heroSize.bubble * 0.51))
                             .foregroundStyle(.white)
                             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                            .scaleEffect(iconBounce && item.id == step ? 1.0 : 0.9)
+                            .scaleEffect(iconBounce && item.id == step ? 1.0 : heroRestScale)
                     }
                 }
                 VStack(spacing: 14) {
                     // fixedSize(vertical) keeps the copy fully visible under vertical
                     // compression — the hero shrinks instead of the text truncating.
                     Text(item.title)
-                        .font(.system(size: 30, weight: .bold))
+                        .font(titleFont)
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -306,8 +324,19 @@ public struct OnboardingFeaturePager: View {
             .frame(width: geo.size.width, height: geo.size.height)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) { iconBounce = true }
+            withAnimation(heroEntrance) { iconBounce = true }
         }
+    }
+
+    private var heroRestScale: CGFloat { isGentleMotion ? 0.97 : 0.9 }
+
+    private var heroEntrance: Animation {
+        isGentleMotion ? .easeOut(duration: 0.7) : .spring(response: 0.5, dampingFraction: 0.55)
+    }
+
+    private var titleFont: Font {
+        if let titleDesign { return .system(size: 30, weight: .semibold, design: titleDesign) }
+        return .system(size: 30, weight: .bold)
     }
 
     /// Hero dimensions from the page height: the symbol bubble takes ~30% of it (156-200pt,
@@ -326,7 +355,7 @@ public struct OnboardingFeaturePager: View {
                 Capsule()
                     .fill(index == step ? Color.white : Color.white.opacity(0.4))
                     .frame(width: index == step ? 24 : 8, height: 8)
-                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: step)
+                    .animation(isGentleMotion ? .easeInOut(duration: 0.35) : .spring(response: 0.4, dampingFraction: 0.7), value: step)
             }
         }
         .padding(.bottom, 24)
